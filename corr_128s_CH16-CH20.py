@@ -83,7 +83,7 @@ def crossc(dstart,dend,ch1,ch2,day):
   
   
   #TAPER
-  taper_percentage=0.2
+  taper_percentage=0.05
   taper= np.blackman(int(len(time_vector) * taper_percentage))
   taper_left, taper_right = np.array_split(taper,2)
   taper = np.concatenate([taper_left,np.ones(len(time_vector)-len(taper)),taper_right])
@@ -125,7 +125,11 @@ def crossc(dstart,dend,ch1,ch2,day):
 		 index, value, acorr = xcorr(tr1, tr2, 25000, full_xcorr=True)
 		
 		 print sq[r]
-		 	
+		 
+		 # check sanity
+		 if np.max(acorr)>1:
+		   acorr = zeros(50001)   
+		   
 		 # sort the 128sec files into calm and beat:
 		 # the value was chosen after observing calm files
 		 	
@@ -157,7 +161,8 @@ def crossc(dstart,dend,ch1,ch2,day):
   corr128_calm_band1 = lowpass(corr128_calm_band1, freq=2, corners=4, zerophase=True, df=500.)
   corr128_calm_band2 = bandpass(corr128_calm, freqmin=2, freqmax=8, df=500., corners=4, zerophase=True)
   corr128_calm_band3 = bandpass(corr128_calm, freqmin=8, freqmax=24, df=500., corners=4, zerophase=True)
-  corr128_beat_band1 = bandpass(corr128_beat, freqmin=0.5, freqmax=2, df=500., corners=2, zerophase=True)
+  corr128_beat_band1 = highpass(corr128_beat, freq=0.1, df=500., corners=4, zerophase=True)
+  corr128_beat_band1 = lowpass(corr128_beat_band1, freq=2, corners=4, zerophase=True, df=500.)
   corr128_beat_band2 = bandpass(corr128_beat, freqmin=2, freqmax=8, df=500., corners=4, zerophase=True)
   corr128_beat_band3 = bandpass(corr128_beat, freqmin=8, freqmax=24, df=500., corners=4, zerophase=True)
   
@@ -192,7 +197,7 @@ def crossc(dstart,dend,ch1,ch2,day):
   SNR_beat_b3 = max(SNR_beat_b3)
   SNR_calm_b3 = max(SNR_calm_b3)
   
-  if ncalm<10:
+  if ncalm<8:
   	SNR_calm_b1 = 0
   	SNR_calm_b2 = 0
   	SNR_calm_b3 = 0
