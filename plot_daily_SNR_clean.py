@@ -9,14 +9,16 @@ from matplotlib.axes import Axes
 
 time_vector = np.linspace(-50.0,50.0,50001)
 ch1 = 6
-ch2 = 25
-day = 8
+ch2 = 7
+day = 24
+month="DEC"
 sec=128
 k=-1
 mode  = "beat"
-counter = "nbeat"
-SNR_type = "SNR_beat_b2"
-band = "8-24Hz"
+counter = "n" + mode
+SNR_type = "SNR_" + mode+ "_b2"
+
+band = "2-8Hz"
 sum=0
 decaytime1 = []
 decaytime2 = []
@@ -25,7 +27,7 @@ max_index=0
 ind = np.arange(-0.1,23.9,1)
 h = np.arange(0,24,1)
 
-path = "/home/jsalvermoser/Desktop/Processing/bands_SNR/" + "CH" + str(ch1) + "_CH" + str(ch2) + "/" + "JAN" + str(day) + "/*" + mode + "_" + band +  "_CH" + str(ch2) + ".npy"
+path = "/import/como-data/salvermoser/bands_SNR/" + "CH" + str(ch1) + "_CH" + str(ch2) + "/" + month + str(day) + "/*" + mode + "_" + band +  "_CH" + str(ch2) + ".npy"
 
 # SUB-PLOT1
 ax1 = plt.subplot(141)
@@ -39,8 +41,6 @@ for fname in glob.glob(path):
      notdecayed1 = []
      notdecayed2 = []
      f=np.load(fname)
-     if np.max(f)>10.0:
-       f = np.zeros(50001)
      
      # this is done to calculate the decaytime of a cross-correlation function
      # first check which frequency band is used and assign a sliding window length
@@ -65,14 +65,19 @@ for fname in glob.glob(path):
      if amplitudes[0]!=0:
       for l in range(max_index,int(dim)): # need to start from here as the maximum is not always in the center of the function
   	  if amplitudes[l]> 0.5* np.max(amplitudes):
-	    notdecayed2.append(l*125/500.)      
+	    notdecayed2.append(l*window/500.)      ####### BUG: before there was 125 instead of window   --> fixed
 	  elif amplitudes[l]> 0.25* np.max(amplitudes):
-	    notdecayed1.append(l*125/500.) # decaytime in seconds
-
-      decaytime1.append(np.max(notdecayed1))
-      decaytime2.append(np.max(notdecayed2))
+	    notdecayed1.append(l*window/500.) # decaytime in seconds  ####### BUG: before there was 125 instead of window --> fixed
+      try:
+	decaytime1.append(np.max(notdecayed1))
+        decaytime2.append(np.max(notdecayed2))
+      except:
+	print 'not possible'
+	decaytime1.append(0)
+        decaytime2.append(0)
      else:
-      decaytime.append(0)    
+      decaytime1.append(0)
+      decaytime2.append(0) 
        
      
      ax1.plot(time_vector,f/np.max(np.abs(f))+k)
@@ -83,8 +88,8 @@ for fname in glob.glob(path):
 ax1.plot(time_vector,sum/np.max(np.abs(sum))-2,linewidth = 3)
 
 
-count = np.load("/home/jsalvermoser/Desktop/Processing/bands_SNR/" + "CH" + str(ch1) + "_CH" + str(ch2) + "/" + "JAN" + str(day) +"/" + counter + ".npy")
-SNR = np.load("/home/jsalvermoser/Desktop/Processing/bands_SNR/" + "CH" + str(ch1) + "_CH" + str(ch2) + "/" + "JAN" + str(day) +"/" + SNR_type + ".npy")
+count = np.load("/import/como-data/salvermoser/bands_SNR/" + "CH" + str(ch1) + "_CH" + str(ch2) + "/" + month + str(day) +"/" + counter + ".npy")
+SNR = np.load("/import/como-data/salvermoser/bands_SNR/" + "CH" + str(ch1) + "_CH" + str(ch2) + "/" + month + str(day) +"/" + SNR_type + ".npy")
 SNR2=[]
 
 for k in range(0,24):
@@ -97,7 +102,7 @@ for k in range(0,24):
 
 # SUB-PLOTS 2-4
 
-plt.suptitle("Daily plot of hourly Cross-Correlation functions using " + str(sec)+ "s-files" ,fontsize=22)
+plt.suptitle("Daily plot of hourly cross-correlation functions using stacked " + str(sec)+ "s-files for " + mode+': '+ band ,fontsize=20, fontweight='bold')
 
 ax1.set_ylim(-3,25)
 ax1.set_xlabel('time [s]')
@@ -124,12 +129,12 @@ ax3.set_ylim(-3,25)
 ax3.set_xlabel('SNR')
 
 ax4 = plt.subplot(144)
-ax4.set_title('Decaytime',color="b", fontsize=18)
+ax4.set_title('Decay time',color="b", fontsize=18)
 ax4.grid()
 b1 = ax4.barh(ind,width=decaytime1,height = 0.2, color='b',label='75% decayed')
 b2 = ax4.barh(ind,width=decaytime2,height = 0.2, color='y', label='50% percent decayed')
 ax4.set_ylim(-3,25)
-ax4.set_xlabel('decaytime [s]')
-ax4.legend()
+ax4.set_xlabel('decay time [s]')
+ax4.legend(loc=3)
 
 plt.show()
